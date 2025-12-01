@@ -1,57 +1,48 @@
 #include <iostream>
 #include <string>
-#include <cctype>   // عشان isdigit
-#include <stdexcept> // عشان نستخدم exceptions
-#include <limits>   // عشان numeric_limits
+#include <cctype>
+#include <stdexcept>
+#include <limits>
 
 using namespace std;
 
-// أقصى حجم للـ stack لو استخدمنا array
 const int MAX_SIZE = 100;
 
-// =========================
-// Stack Implementation (Array)
-// =========================
 class Stack {
 private:
-    int arr[MAX_SIZE]; // مصفوفة لتخزين عناصر الستاك
-    int top;           // مؤشر لأعلى عنصر (index)
+    int arr[MAX_SIZE];
+    int top;
 
 public:
     Stack() {
-        top = -1; // الستاك فاضي في البداية
+        top = -1;
     }
 
-    // هل الستاك فاضي؟
     bool isEmpty() {
         return top == -1;
     }
 
-    // هل الستاك مليان؟ (لأننا مستخدمين مصفوفة بحجم ثابت)
     bool isFull() {
         return top == MAX_SIZE - 1;
     }
 
-    // إدخال عنصر أعلى الستاك
     void push(int value) {
         if (isFull()) {
-            throw runtime_error("Stack overflow!"); // خطأ لو الستاك مليان
+            throw runtime_error("Stack overflow!");
         }
         top++;
         arr[top] = value;
     }
 
-    // إخراج العنصر الأعلى وإرجاعه
     int pop() {
         if (isEmpty()) {
-            throw runtime_error("Stack underflow!"); // خطأ لو الستاك فاضي
+            throw runtime_error("Stack underflow!");
         }
         int value = arr[top];
         top--;
         return value;
     }
 
-    // إرجاع العنصر الأعلى بدون حذفه
     int peek() {
         if (isEmpty()) {
             throw runtime_error("Stack is empty!");
@@ -60,46 +51,34 @@ public:
     }
 };
 
-// =========================
-// دوال مساعدة لـ infix → postfix
-// =========================
-
-// دالة ترجع أولوية الـ operator
 int precedence(char op) {
     if (op == '*' || op == '/') return 2;
     if (op == '+' || op == '-') return 1;
-    return 0; // أي حاجة تانية (مش أوبيراتور أساسي)
+    return 0;
 }
 
-// هل الحرف ده operator؟
 bool isOperator(char c) {
     return (c == '+' || c == '-' || c == '*' || c == '/');
 }
 
-// تحويل infix إلى postfix
 string infixToPostfix(const string &expression) {
-    Stack st;            // ستاك لخزن الـ operators
-    string output = "";  // هنا هنجمع postfix
+    Stack st;
+    string output = "";
 
     for (size_t i = 0; i < expression.length(); i++) {
         char c = expression[i];
 
-        // تجاهل المسافات لو المستخدم كتبها
         if (c == ' ') {
             continue;
         }
 
-        // لو رقم (operand) - هنا افترضنا single-digit
         if (isdigit(c)) {
-            // نضيفه مباشرة للـ output
             output += c;
-            output += ' '; // مسافة بين كل رقم والتاني
+            output += ' ';
         }
-        // لو '(' نحطه في الستاك
         else if (c == '(') {
             st.push(c);
         }
-        // لو ')' نطلع لحد ما نوصل لـ '('
         else if (c == ')') {
             bool foundOpening = false;
             while (!st.isEmpty()) {
@@ -115,25 +94,20 @@ string infixToPostfix(const string &expression) {
                 throw runtime_error("Error: Mismatched parentheses.");
             }
         }
-        // لو operator
         else if (isOperator(c)) {
-            // نطلع من الستاك أي operators لهم أولوية أعلى أو مساوية
             while (!st.isEmpty() && isOperator((char)st.peek()) &&
                    precedence((char)st.peek()) >= precedence(c)) {
                 char op = (char)st.pop();
                 output += op;
                 output += ' ';
             }
-            // بعد كده نحط الأوبيراتور الحالي
             st.push(c);
         }
         else {
-            // حرف مش متوقع
             throw runtime_error(string("Invalid character in expression: ") + c);
         }
     }
 
-    // بعد ما نخلص الـ expression نفضي الستاك
     while (!st.isEmpty()) {
         char op = (char)st.pop();
         if (op == '(' || op == ')') {
@@ -146,36 +120,29 @@ string infixToPostfix(const string &expression) {
     return output;
 }
 
-// =========================
-// تقييم Postfix
-// =========================
-
 int evaluatePostfix(const string &expression) {
-    Stack st; // ستاك للأرقام
+    Stack st;
 
     for (size_t i = 0; i < expression.length(); i++) {
         char c = expression[i];
 
-        // تجاهل المسافات
         if (c == ' ') {
             continue;
         }
 
-        // لو رقم، نحوله إلى int ونحطه في الستاك
         if (isdigit(c)) {
-            int value = c - '0'; // تحويل char رقم لـ int
+            int value = c - '0';
             st.push(value);
         }
-        // لو operator نطلع رقمين من الستاك
         else if (isOperator(c)) {
             if (st.isEmpty()) {
                 throw runtime_error("Error: Not enough operands.");
             }
-            int right = st.pop(); // operand الثاني
+            int right = st.pop();
             if (st.isEmpty()) {
                 throw runtime_error("Error: Not enough operands.");
             }
-            int left = st.pop();  // operand الأول
+            int left = st.pop();
 
             int result = 0;
 
@@ -197,16 +164,13 @@ int evaluatePostfix(const string &expression) {
                     break;
             }
 
-            // نحط النتيجة في الستاك
             st.push(result);
         }
         else {
-            // حرف غير متوقع في postfix
             throw runtime_error(string("Invalid character in postfix expression: ") + c);
         }
     }
 
-    // في الآخر لازم يكون عندنا قيمة واحدة بس في الستاك
     if (st.isEmpty()) {
         throw runtime_error("Error: No result on stack.");
     }
@@ -219,15 +183,11 @@ int evaluatePostfix(const string &expression) {
     return finalResult;
 }
 
-// =========================
-// main program
-// =========================
 int main() {
     try {
         cout << "Enter an infix expression (single-digit operands): ";
         string infix;
 
-        // لو فيه newline قديم في الـ input buffer نشيله
         if (cin.peek() == '\n') {
             cin.ignore();
         }
@@ -248,11 +208,9 @@ int main() {
         cout << "Error: " << e.what() << endl;
     }
 
-    // ⬇⬇ الجزء المهم عشان الـ CMD مايقفلش ⬇⬇
     cout << "\nPress Enter to exit...";
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     cin.get();
 
     return 0;
 }
-
